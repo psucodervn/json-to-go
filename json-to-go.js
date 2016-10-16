@@ -8,7 +8,7 @@
   A simple utility to translate JSON into a Go type definition.
 */
 
-function jsonToGo (json, typename) {
+function jsonToGo (json, typename, useGorm = false) {
   let data
   let scope
   let go = ''
@@ -80,19 +80,19 @@ function jsonToGo (json, typename) {
             omitempty[keyname] = elem.count !== scopeLength
           }
 
-          parseStruct(struct, omitempty) // finally parse the struct !!
+          parseStruct(struct, omitempty, useGorm) // finally parse the struct !!
         } else {
           append(sliceType || 'interface{}')
         }
       } else {
-        parseStruct(scope)
+        parseStruct(scope, undefined, useGorm)
       }
     } else {
       append(goType(scope))
     }
   }
 
-  function parseStruct (scope, omitempty) {
+  function parseStruct (scope, omitempty, useGorm = false) {
     append('struct {\n');
     ++tabs
     let keys = Object.keys(scope)
@@ -102,7 +102,11 @@ function jsonToGo (json, typename) {
       append(format(keyname) + ' ')
       parseScope(scope[keyname])
 
-      append(' `json:"' + keyname)
+      if (useGorm) {
+        append(' `gorm:"column:' + keyname + '" json:"' + keyname)
+      } else {
+        append(' `json:"' + keyname)
+      }
       if (omitempty && omitempty[keyname] === true) {
         append(',omitempty')
       }
